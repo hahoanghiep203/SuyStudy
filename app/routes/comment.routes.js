@@ -29,7 +29,7 @@ module.exports = function(app) {
   // You'll need a middleware like authJwt.isOwnerOrAdmin for this
   app.delete(
     "/api/comments/:commentId",
-    [authJwt.verifyToken /*, authJwt.isOwnerOrAdmin */],
+    [authJwt.verifyToken, authJwt.isOwnerOrAdmin],
     controller.delete
   );
 };

@@ -1,6 +1,7 @@
 // app/controllers/comment.controller.js
 const db = require("../models");
 const Comment = db.comment;
+const mongoose = require("mongoose"); // Import mongoose for ObjectId validation
 
 // Create a new Comment for a Course
 exports.create = (req, res) => {
@@ -42,13 +43,17 @@ exports.findAll = (req, res) => {
 
 // Delete a Comment by its id
 exports.delete = (req, res) => {
-  // Add ownership or admin check here in a real application
-  Comment.findByIdAndRemove(req.params.commentId)
+  // Validate ObjectId before attempting to delete
+  if (!mongoose.Types.ObjectId.isValid(req.params.commentId)) {
+    return res.status(400).send({ message: "Invalid comment ID format." });
+  }
+  Comment.findByIdAndDelete(req.params.commentId)
     .then(data => {
       if (!data) return res.status(404).send({ message: "Comment not found." });
       res.send({ message: "Comment deleted successfully!" });
     })
     .catch(err => {
+      console.error('Error deleting comment:', err); // Log error for debugging
       res.status(500).send({ message: err.message || "Error deleting Comment." });
     });
 };

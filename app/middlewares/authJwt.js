@@ -65,12 +65,38 @@ isModerator = async (req, res, next) => { // Made async
   }
 };
 
-// You might want to add other role checks or ownership checks here later
-// e.g., isOwnerOrAdmin for comment deletion
+// Middleware: allow if admin or comment owner
+isOwnerOrAdmin = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).send({ message: "User not found for permission check." });
+    }
+    const roles = await Role.find({ _id: { $in: user.roles } });
+    const isAdmin = roles.some(role => role.name === "admin");
+    if (isAdmin) {
+      return next();
+    }
+    // Only check ownership if not admin
+    const commentId = req.params.commentId;
+    const Comment = db.comment;
+    const comment = await Comment.findById(commentId);
+    if (!comment) {
+      return res.status(404).send({ message: "Comment not found." });
+    }
+    if (comment.user_id.toString() === req.userId) {
+      return next();
+    }
+    return res.status(403).send({ message: "Require admin or comment owner rights." });
+  } catch (err) {
+    return res.status(500).send({ message: err.message || "Error checking permissions." });
+  }
+};
 
 const authJwt = {
   verifyToken,
   isAdmin,
-  isModerator
+  isModerator,
+  isOwnerOrAdmin
 };
 module.exports = authJwt;
